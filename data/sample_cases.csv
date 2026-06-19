@@ -1,0 +1,16 @@
+case_id,name,age,gender,date_reported,district,state,description,status
+MP001,Ravi Kumar,14,Male,2024-01-10,Patna,Bihar,Thin boy with short black hair wearing blue school uniform last seen near railway station,Open
+MP002,Sunita Devi,16,Female,2024-01-15,Patna,Bihar,Girl with medium height wheatish complexion wearing red salwar kameez near bus stand,Open
+MP003,Arjun Singh,13,Male,2024-02-03,Patna,Bihar,Young boy short height dark hair wearing grey shirt near government school,Open
+MP004,Meena Bai,15,Female,2024-02-20,Muzaffarpur,Bihar,Teenage girl fair skin long hair wearing green churidar seen near market,Open
+MP005,Rahul Yadav,17,Male,2024-03-05,Muzaffarpur,Bihar,Tall boy with curly hair wearing jeans and white shirt near college,Open
+MP006,Priya Kumari,14,Female,2024-03-12,Vaishali,Bihar,Short girl with plaited hair wearing school uniform near primary school,Open
+MP007,Amit Sharma,12,Male,2024-04-01,Delhi,Delhi,Small boy wearing torn clothes last seen at Anand Vihar bus terminal,Open
+MP008,Sita Ram,16,Male,2024-04-08,Delhi,Delhi,Teenager with scar on left cheek wearing black jacket near metro station,Open
+MP009,Kavya Nair,15,Female,2024-04-22,Ernakulam,Kerala,Girl with shoulder length hair wearing school uniform near church road,Open
+MP010,Thomas Joseph,14,Male,2024-05-01,Ernakulam,Kerala,Boy with glasses wearing blue uniform seen near fishing harbour,Open
+MP011,Lakshmi Reddy,13,Female,2024-05-10,Hyderabad,Telangana,Young girl with long braids wearing pink frock near old city area,Open
+MP012,Venkat Rao,15,Male,2024-05-18,Hyderabad,Telangana,Teenage boy medium build wearing college t-shirt near Charminar,Open
+MP013,Pooja Patel,14,Female,2024-06-02,Surat,Gujarat,Girl fair complexion wearing salwar near diamond factory area,Open
+MP014,Nilesh Mehta,16,Male,2024-06-15,Surat,Gujarat,Boy with athletic build wearing school uniform near textile market,Open
+MP015,Radha Devi,12,Female,2024-07-01,Patna,Bihar,Small girl dark complexion short hair wearing faded yellow frock near railway tracks,Open

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SETU — Missing Persons Pattern Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+  :root{
+    --bg:        #0E1318;
+    --surface:   #161D25;
+    --surface-2: #1D2630;
+    --border:    #2A3441;
+    --text:      #E7ECF1;
+    --text-dim:  #8A97A6;
+    --text-mute: #5A6675;
+    --teal:      #5FA8A6;
+    --teal-dim:  #5FA8A633;
+    --amber:     #D98E4A;
+    --amber-dim: #D98E4A33;
+    --coral:     #C9665B;
+    --coral-dim: #C9665B33;
+    --display: 'Space Grotesk', sans-serif;
+    --body: 'Inter', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    min-height:100vh;
+  }
+
+  /* ── Header ── */
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:20px 32px;
+    border-bottom:1px solid var(--border);
+    background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+  }
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-mark{
+    width:34px; height:34px; border-radius:8px;
+    background: linear-gradient(135deg, var(--teal), #3A7472);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--display); font-weight:700; font-size:15px; color:#0E1318;
+  }
+  .brand-text h1{font-family:var(--display); font-size:19px; font-weight:600; letter-spacing:0.02em;}
+  .brand-text p{font-size:11px; color:var(--text-mute); font-family:var(--mono); letter-spacing:0.04em; text-transform:uppercase; margin-top:1px;}
+
+  .stat-row{display:flex; gap:28px;}
+  .stat{text-align:right;}
+  .stat-num{font-family:var(--display); font-size:24px; font-weight:600; line-height:1;}
+  .stat-label{font-size:10px; color:var(--text-mute); font-family:var(--mono); text-transform:uppercase; letter-spacing:0.06em; margin-top:4px;}
+  .stat-num.high{color:var(--coral);}
+  .stat-num.med{color:var(--amber);}
+
+  /* ── Layout ── */
+  main{
+    display:grid;
+    grid-template-columns: 1fr 360px;
+    gap:1px;
+    background:var(--border);
+    min-height: calc(100vh - 77px);
+  }
+  @media (max-width: 900px){ main{grid-template-columns: 1fr;} }
+
+  .panel{ background:var(--bg); display:flex; flex-direction:column; }
+  .panel-head{
+    padding:16px 20px 12px;
+    display:flex; align-items:baseline; justify-content:space-between;
+    border-bottom:1px solid var(--border);
+  }
+  .panel-head h2{font-family:var(--display); font-size:14px; font-weight:600; letter-spacing:0.02em;}
+  .panel-head .sub{font-size:11px; color:var(--text-mute); font-family:var(--mono);}
+
+  /* ── Graph ── */
+  #graph-panel{min-height:560px;}
+  #graph-wrap{flex:1; position:relative;}
+  #graph-svg{width:100%; height:100%; display:block;}
+  .legend{
+    position:absolute; bottom:16px; left:20px;
+    display:flex; gap:16px; font-size:11px; color:var(--text-dim);
+    font-family:var(--mono);
+  }
+  .legend span{display:flex; align-items:center; gap:6px;}
+  .dot{width:8px; height:8px; border-radius:50%; display:inline-block;}
+
+  .node-tooltip{
+    position:absolute; pointer-events:none;
+    background:var(--surface-2); border:1px solid var(--border);
+    border-radius:8px; padding:10px 12px; font-size:12px;
+    max-width:220px; opacity:0; transition:opacity 0.15s;
+    box-shadow:0 8px 24px rgba(0,0,0,0.4);
+  }
+  .node-tooltip .t-name{font-family:var(--display); font-weight:600; margin-bottom:4px;}
+  .node-tooltip .t-row{color:var(--text-dim); font-family:var(--mono); font-size:10.5px; margin-top:2px;}
+
+  /* ── Alert feed ── */
+  #alerts{overflow-y:auto; flex:1; padding:14px 16px;}
+  .alert-card{
+    background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--text-mute);
+    border-radius:6px; padding:12px 14px; margin-bottom:10px; cursor:pointer;
+    transition: border-color 0.15s, transform 0.1s;
+  }
+  .alert-card:hover{transform:translateX(2px);}
+  .alert-card.HIGH{border-left-color:var(--coral);}
+  .alert-card.MEDIUM{border-left-color:var(--amber);}
+  .alert-card.LOW{border-left-color:var(--teal);}
+  .alert-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
+  .alert-badge{
+    font-family:var(--mono); font-size:9.5px; font-weight:600; letter-spacing:0.05em;
+    padding:3px 7px; border-radius:4px; text-transform:uppercase;
+  }
+  .alert-badge.HIGH{background:var(--coral-dim); color:var(--coral);}
+  .alert-badge.MEDIUM{background:var(--amber-dim); color:var(--amber);}
+  .alert-badge.LOW{background:var(--teal-dim); color:var(--teal);}
+  .alert-id{font-family:var(--mono); font-size:10px; color:var(--text-mute);}
+  .alert-desc{font-size:12.5px; color:var(--text-dim); line-height:1.5;}
+  .alert-desc b{color:var(--text); font-weight:500;}
+  .empty-state{padding:32px 20px; text-align:center; color:var(--text-mute); font-size:13px; line-height:1.6;}
+
+  /* ── Case table ── */
+  #table-panel{grid-column: 1 / -1;}
+  table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  thead th{
+    text-align:left; padding:10px 20px; font-family:var(--mono); font-size:10px;
+    text-transform:uppercase; letter-spacing:0.05em; color:var(--text-mute);
+    border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--bg);
+  }
+  tbody td{padding:10px 20px; border-bottom:1px solid var(--border); color:var(--text-dim);}
+  tbody tr:hover{background:var(--surface);}
+  tbody td.name{color:var(--text); font-weight:500;}
+  tbody td.mono{font-family:var(--mono); font-size:11px;}
+  .status-pill{
+    font-family:var(--mono); font-size:10px; padding:2px 8px; border-radius:10px;
+    background:var(--surface-2); color:var(--text-dim); border:1px solid var(--border);
+  }
+  #table-scroll{max-height:340px; overflow-y:auto;}
+
+  ::-webkit-scrollbar{width:8px; height:8px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+
+  .loading{padding:40px; text-align:center; color:var(--text-mute); font-family:var(--mono); font-size:12px;}
+  button.refresh{
+    background:var(--surface-2); border:1px solid var(--border); color:var(--text-dim);
+    font-family:var(--mono); font-size:10.5px; padding:6px 12px; border-radius:6px;
+    cursor:pointer; letter-spacing:0.03em;
+  }
+  button.refresh:hover{color:var(--text); border-color:var(--teal);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">S</div>
+    <div class="brand-text">
+      <h1>SETU</h1>
+      <p>Missing Persons Pattern Intelligence</p>
+    </div>
+  </div>
+  <div class="stat-row">
+    <div class="stat"><div class="stat-num" id="stat-cases">—</div><div class="stat-label">Cases</div></div>
+    <div class="stat"><div class="stat-num" id="stat-edges">—</div><div class="stat-label">Linked pairs</div></div>
+    <div class="stat"><div class="stat-num med" id="stat-medium">—</div><div class="stat-label">Medium risk</div></div>
+    <div class="stat"><div class="stat-num high" id="stat-high">—</div><div class="stat-label">High risk</div></div>
+    <div class="stat" style="align-self:center;"><button class="refresh" onclick="loadAll()">↻ Refresh</button></div>
+  </div>
+</header>
+
+<main>
+  <section class="panel" id="graph-panel">
+    <div class="panel-head">
+      <h2>Case Network</h2>
+      <span class="sub">force-directed · drag to explore</span>
+    </div>
+    <div id="graph-wrap">
+      <svg id="graph-svg"></svg>
+      <div class="node-tooltip" id="tooltip"></div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--coral)"></i>High-risk cluster</span>
+        <span><i class="dot" style="background:var(--amber)"></i>Medium-risk cluster</span>
+        <span><i class="dot" style="background:var(--teal)"></i>Low-risk / unclustered</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Alert Feed</h2>
+      <span class="sub">ranked by risk</span>
+    </div>
+    <div id="alerts"><div class="loading">Loading clusters…</div></div>
+  </section>
+
+  <section class="panel" id="table-panel">
+    <div class="panel-head">
+      <h2>All Cases</h2>
+      <span class="sub" id="table-sub">—</span>
+    </div>
+    <div id="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Case ID</th><th>Name</th><th>Age</th><th>Gender</th><th>District</th><th>State</th><th>Reported</th><th>Status</th></tr>
+        </thead>
+        <tbody id="case-rows"><tr><td colspan="8" class="loading">Loading cases…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+const API = "http://localhost:8000";
+
+const riskColor = { HIGH: "#C9665B", MEDIUM: "#D98E4A", LOW: "#5FA8A6" };
+
+async function loadAll(){
+  const [stats, graph, clusterResult, cases] = await Promise.all([
+    fetch(`${API}/stats`).then(r=>r.json()).catch(()=>null),
+    fetch(`${API}/graph?limit=300`).then(r=>r.json()).catch(()=>({nodes:[],edges:[]})),
+    fetch(`${API}/cluster/detect`, {method:"POST"}).then(r=>r.json()).catch(()=>({clusters:[]})),
+    fetch(`${API}/cases?limit=200`).then(r=>r.json()).catch(()=>[]),
+  ]);
+
+  const clusters = clusterResult.clusters || [];
+  const riskByCluster = {};
+  clusters.forEach(c => riskByCluster[c.cluster_id] = c.risk_level);
+
+  renderStats(stats, graph, clusterResult);
+  renderGraph(graph, riskByCluster);
+  renderAlerts(clusters);
+  renderTable(cases);
+}
+
+function renderStats(stats, graph, clusterResult){
+  document.getElementById("stat-cases").textContent = stats?.cases ?? "—";
+  document.getElementById("stat-edges").textContent = graph.edges?.length ?? 0;
+  document.getElementById("stat-medium").textContent = clusterResult.medium_risk ?? 0;
+  document.getElementById("stat-high").textContent = clusterResult.high_risk ?? 0;
+}
+
+function renderAlerts(clusters){
+  const el = document.getElementById("alerts");
+  if(!clusters.length){
+    el.innerHTML = `<div class="empty-state">No clusters yet.<br>Run similarity matching with more case data to surface patterns.</div>`;
+    return;
+  }
+  el.innerHTML = clusters.map(c => {
+    const districts = c.districts_spanned.join(", ");
+    const names = c.members.map(m=>m.name).join(", ");
+    return `
+      <div class="alert-card ${c.risk_level}" onclick="focusCluster(${c.cluster_id})">
+        <div class="alert-top">
+          <span class="alert-badge ${c.risk_level}">${c.risk_level} risk</span>
+          <span class="alert-id">cluster #${c.cluster_id}</span>
+        </div>
+        <div class="alert-desc">
+          <b>${c.size} linked cases</b> across <b>${c.districts_spanned.length} district(s)</b>: ${districts}
+          <br><span style="color:var(--text-mute)">${names}</span>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function renderTable(cases){
+  const tbody = document.getElementById("case-rows");
+  document.getElementById("table-sub").textContent = `${cases.length} records`;
+  if(!cases.length){
+    tbody.innerHTML = `<tr><td colspan="8" class="loading">No cases ingested yet.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = cases.map(c => `
+    <tr>
+      <td class="mono">${c.case_id}</td>
+      <td class="name">${c.name}</td>
+      <td>${c.age}</td>
+      <td>${c.gender}</td>
+      <td>${c.district}</td>
+      <td>${c.state}</td>
+      <td class="mono">${c.date_reported}</td>
+      <td><span class="status-pill">${c.status}</span></td>
+    </tr>
+  `).join("");
+}
+
+let simulation;
+function renderGraph(graph, riskByCluster){
+  const svg = d3.select("#graph-svg");
+  svg.selectAll("*").remove();
+  const wrap = document.getElementById("graph-wrap");
+  const width = wrap.clientWidth, height = wrap.clientHeight || 560;
+  svg.attr("viewBox", [0,0,width,height]);
+
+  if(!graph.nodes?.length){
+    svg.append("text").attr("x",width/2).attr("y",height/2)
+      .attr("text-anchor","middle").attr("fill","#5A6675")
+      .attr("font-family","IBM Plex Mono").attr("font-size","12px")
+      .text("No case data yet — ingest a CSV to populate the graph");
+    return;
+  }
+
+  const nodes = graph.nodes.map(d => ({...d}));
+  const links = (graph.edges || []).map(d => ({...d}));
+
+  const g = svg.append("g");
+  svg.call(d3.zoom().scaleExtent([0.4, 3]).on("zoom", (e) => g.attr("transform", e.transform)));
+
+  simulation = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id(d=>d.id).distance(70).strength(0.4))
+    .force("charge", d3.forceManyBody().strength(-160))
+    .force("center", d3.forceCenter(width/2, height/2))
+    .force("collide", d3.forceCollide(22));
+
+  const link = g.append("g").selectAll("line")
+    .data(links).join("line")
+    .attr("stroke", "#2A3441")
+    .attr("stroke-width", d => 1 + (d.score || 0.5) * 2.5)
+    .attr("stroke-opacity", 0.6);
+
+  const node = g.append("g").selectAll("circle")
+    .data(nodes).join("circle")
+    .attr("r", 9)
+    .attr("fill", d => riskByCluster[d.cluster_id] ? riskColor[riskByCluster[d.cluster_id]] : "#3A4452")
+    .attr("stroke", "#0E1318")
+    .attr("stroke-width", 2)
+    .style("cursor", "grab")
+    .call(drag(simulation));
+
+  const tooltip = d3.select("#tooltip");
+  node.on("mouseenter", (event, d) => {
+      tooltip.style("opacity", 1).html(`
+        <div class="t-name">${d.name}</div>
+        <div class="t-row">Age ${d.age} · ${d.gender}</div>
+        <div class="t-row">${d.district}, ${d.state}</div>
+        <div class="t-row">Case ${d.case_id} · ${d.status}</div>
+        ${d.cluster_id != null ? `<div class="t-row">Cluster #${d.cluster_id}</div>` : ""}
+      `);
+    })
+    .on("mousemove", (event) => {
+      const rect = wrap.getBoundingClientRect();
+      tooltip.style("left", (event.clientX - rect.left + 14) + "px")
+             .style("top", (event.clientY - rect.top + 14) + "px");
+    })
+    .on("mouseleave", () => tooltip.style("opacity", 0));
+
+  const label = g.append("g").selectAll("text")
+    .data(nodes).join("text")
+    .text(d => d.name.split(" ")[0])
+    .attr("font-family", "Inter").attr("font-size", "9.5px")
+    .attr("fill", "#8A97A6").attr("dx", 12).attr("dy", 4)
+    .style("pointer-events", "none");
+
+  simulation.on("tick", () => {
+    link.attr("x1", d=>d.source.x).attr("y1", d=>d.source.y)
+        .attr("x2", d=>d.target.x).attr("y2", d=>d.target.y);
+    node.attr("cx", d=>d.x).attr("cy", d=>d.y);
+    label.attr("x", d=>d.x).attr("y", d=>d.y);
+  });
+}
+
+function drag(simulation){
+  function started(event){ if(!event.active) simulation.alphaTarget(0.3).restart(); event.subject.fx=event.subject.x; event.subject.fy=event.subject.y; }
+  function dragged(event){ event.subject.fx=event.x; event.subject.fy=event.y; }
+  function ended(event){ if(!event.active) simulation.alphaTarget(0); event.subject.fx=null; event.subject.fy=null; }
+  return d3.drag().on("start", started).on("drag", dragged).on("end", ended);
+}
+
+function focusCluster(clusterId){
+  // simple visual nudge — reheat simulation so clustered nodes regroup visibly
+  if(simulation) simulation.alpha(0.5).restart();
+}
+
+loadAll();
+</script>
+</body>
+</html>
